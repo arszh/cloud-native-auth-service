@@ -1,118 +1,186 @@
-# DevOps Portfolio Project - Auth Service (Kubernetes + GitOps)
 
-Этот репозиторий содержит минимальный продакшен-подобный DevOps-проект для портфолио:
+# Cloud-Native Auth Service 🚀  
+**Production-grade DevOps project with Kubernetes, GitOps, CI/CD, and Docker**
 
-- Микросервис `auth-service` (Node.js, JWT, PostgreSQL)
-- Docker
-- Helm chart для Kubernetes
-- ArgoCD Application (GitOps)
-- GitHub Actions (CI: build & push Docker image)
+This repository contains a **realistic, production-style microservice setup** designed to showcase professional DevOps skills.  
 
-## Стек
 
-- Node.js + Express
-- PostgreSQL
-- Docker
-- Kubernetes + Helm
-- ArgoCD
-- GitHub Actions
-- Docker Hub (как registry)
+The project includes:
 
-## Локальный запуск (dev)
+- **Node.js Authentication Microservice**
+- **PostgreSQL Database**
+- **Dockerized Runtime**
+- **Kubernetes Deployment via Helm**
+- **GitOps continuous delivery with ArgoCD**
+- **CI pipeline with GitHub Actions**
 
-1. Перейти в папку сервиса:
+Perfect for demonstrating skills in containerization, CI/CD, cloud-native architecture, GitOps workflows, and K8s automation.
 
+---
+
+## 🧩 Architecture Overview
+
+```
+                GitHub Repo
+                     │
+             GitHub Actions (CI)
+         Build → Scan → Push Docker image
+                     │
+                     ▼
+             Docker Hub Registry
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │        ArgoCD (CD)       │
+        │ GitOps sync from Git repo│
+        └──────────────────────────┘
+                     │
+                     ▼
+          Kubernetes Cluster (prod)
+        ┌──────────────────────────┐
+        │  auth-service (Node.js)  │
+        │  Postgres (Stateful)     │
+        │  Ingress (Nginx)         │
+        └──────────────────────────┘
+```
+
+The cluster fully auto-syncs on code changes using ArgoCD.
+
+---
+
+## 🚀 Features
+
+### 🔐 Auth Microservice
+- Register/Login
+- JWT authentication
+- Hashed passwords (bcrypt)
+- Secure environment variable injection
+- PostgreSQL persistence
+
+### ☸ Kubernetes & Helm
+- Production-grade Deployment & Service
+- Ingress with Nginx
+- Dynamic environment variables via Secrets
+- Scalable replica configuration
+
+### 🔄 GitOps with ArgoCD
+- Automatic deployment from Git
+- Self-healing & drift detection
+- Versioned infrastructure
+
+### ⚙ CI/CD on GitHub Actions
+- Build Docker image
+- Push to Docker Hub
+- Automatic deployment via ArgoCD
+
+---
+
+## 📦 Tech Stack
+
+**Backend:** Node.js, Express  
+**Database:** PostgreSQL  
+**Containerization:** Docker  
+**Orchestration:** Kubernetes  
+**Deployment:** Helm + ArgoCD  
+**CI Pipeline:** GitHub Actions  
+**Registry:** Docker Hub  
+**Ingress:** Nginx  
+
+---
+
+## 🛠 Local Development
+
+### 1. Clone the repository
 ```bash
-cd services/auth-service
+git clone https://github.com/your-username/cloud-native-auth-service.git
+cd cloud-native-auth-service/services/auth-service
+```
+
+### 2. Configure environment
+```bash
 cp .env.example .env
-# отредактируй DB_URL и JWT_SECRET при необходимости
 ```
 
-2. Поднять PostgreSQL (например, через Docker):
-
+### 3. Start PostgreSQL locally
 ```bash
-docker run --name auth-postgres \
-  -e POSTGRES_USER=user \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=authdb \
-  -p 5432:5432 \
-  -d postgres:16
+docker run --name auth-postgres   -e POSTGRES_USER=user   -e POSTGRES_PASSWORD=password   -e POSTGRES_DB=authdb   -p 5432:5432   -d postgres:16
 ```
 
-3. Установить зависимости и запустить сервис:
-
+### 4. Run service
 ```bash
 npm install
 npm run dev
 ```
 
-Сервис будет доступен на `http://localhost:3000`.
+API available at:
+```
+http://localhost:3000/api/auth
+```
 
-## API
+---
 
-- `GET /api/auth/health` — проверка здоровья
-- `POST /api/auth/register` — регистрация
-  - body: `{ "email": "test@example.com", "password": "secret123" }`
-- `POST /api/auth/login` — логин
-  - body: `{ "email": "test@example.com", "password": "secret123" }`
-- `GET /api/auth/me` — информация о пользователе (нужен заголовок `Authorization: Bearer <token>`)
+## 🌐 API Endpoints
 
-## CI (GitHub Actions)
+| Method | Endpoint            | Description            |
+|--------|----------------------|------------------------|
+| GET    | `/health`           | Service health check   |
+| POST   | `/register`         | Create user            |
+| POST   | `/login`            | Authenticate user      |
+| GET    | `/me`               | Get current user       |
 
-Workflow: `.github/workflows/ci-auth-service.yml`
+Authorization:
+```
+Authorization: Bearer <token>
+```
 
-- при каждом `push` в `services/auth-service/**`:
-  - устанавливаются зависимости
-  - билдится Docker-образ
-  - образ пушится в Docker Hub как `DOCKERHUB_USERNAME/auth-service:latest`
+---
 
-Для работы нужно добавить секреты в GitHub (Settings → Secrets and variables → Actions):
+## ☸ Kubernetes Deployment
 
-- `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
-
-## CD (ArgoCD + Helm)
-
-- Helm chart: `k8s/helm/auth-service`
-- ArgoCD Application: `argocd/auth-service-app.yaml`
-  - указывает на этот репозиторий и путь к Helm-чарту
-  - разворачивает релиз в namespace `prod`
-
-## Деплой в Kubernetes (кластер + Postgres + ArgoCD)
-
-1. Создать namespace `prod` и поднять Postgres:
-
+### 1. Create namespace
 ```bash
 kubectl apply -f k8s/namespaces/prod.yaml
+```
+
+### 2. Deploy PostgreSQL
+```bash
 kubectl apply -f k8s/postgres/postgres.yaml
 ```
 
-2. Создать секрет с параметрами для `auth-service`:
-
+### 3. Create Secrets
 ```bash
 kubectl create secret generic auth-service-secret   --from-literal=jwtSecret="super-secret-key"   --from-literal=dbUrl="postgresql://user:password@postgres:5432/authdb"   -n prod
 ```
 
-3. Установить ArgoCD (если ещё не установлен) и применить Application:
-
+### 4. Deploy via ArgoCD
 ```bash
 kubectl apply -f argocd/auth-service-app.yaml
 ```
 
-4. Настроить домен/Ingress (host в `k8s/helm/auth-service/values.yaml`).
+ArgoCD will automatically deploy & keep the cluster in sync with Git.
 
-После этого:
+---
 
-- ArgoCD будет деплоить `auth-service` в namespace `prod`;
-- сервис сможет подключаться к Postgres в `prod` по `postgres:5432`.
+## 🔧 CI/CD Pipeline (GitHub Actions)
 
-## Как использовать этот проект в портфолио
+Located at:
+```
+.github/workflows/ci-auth-service.yml
+```
 
-- Добавь описание в профиле Upwork, например:
+Pipeline steps:
+1. Checkout repository  
+2. Install dependencies  
+3. Build Docker image  
+4. Push to Docker Hub  
+5. ArgoCD pulls new version automatically  
 
-> Implemented production-like Kubernetes deployment with GitOps (ArgoCD), CI (GitHub Actions), Docker, Helm, and PostgreSQL-backed auth microservice.
+Add these GitHub secrets:
 
-- Можешь расширить проект:
-  - добавить другие сервисы (`catalog-service`, `order-service`)
-  - добавить Prometheus + Grafana
-  - добавить Terraform для создания кластера и RDS.
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Docker Hub login |
+| `DOCKERHUB_TOKEN`    | Docker Hub access token |
+
+
+
